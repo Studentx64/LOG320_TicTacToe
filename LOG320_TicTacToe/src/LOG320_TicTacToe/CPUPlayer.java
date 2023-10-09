@@ -53,6 +53,7 @@ class CPUPlayer
     public ArrayList<Move> getNextMoveMinMax(Board board)
     {
         numExploredNodes = 0;
+        return null;
 
     }
 
@@ -61,6 +62,7 @@ class CPUPlayer
     // ont le même score.
     public ArrayList<Move> getNextMoveAB(Board board){
         numExploredNodes = 0;
+        return null;
 
     }*/
 }

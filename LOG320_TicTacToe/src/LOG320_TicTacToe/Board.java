@@ -9,7 +9,6 @@ import java.util.*;
 class Board
 {
     private Mark[][] board;
-    private Mark winnerIs;
 
     // Ne pas changer la signature de cette méthode
     public Board() {
@@ -19,8 +18,8 @@ class Board
     			this.board[i][j]=Mark.EMPTY;
     		}
     	}
-    	System.out.println("Plateau créé :");
-    	printBoard();
+    	//System.out.println("Plateau créé :");
+    	//printBoard();
     }
     
 	public void printBoard(){
@@ -44,6 +43,7 @@ class Board
 		System.out.println(sb);
 	}
 
+
     // Place la pièce 'mark' sur le plateau, à la
     // position spécifiée dans Move
     //
@@ -58,6 +58,41 @@ class Board
     //           0   pour un match nul
     // Ne pas changer la signature de cette méthode
     public int evaluate(Mark mark){
-
+		for (int i = 0; i < 3; i++) {
+			if (board[i][0] == mark && board[i][1] == mark && board[i][2] == mark) {
+				return 100;  // Winning row
+			}
+			if (board[0][i] == mark && board[1][i] == mark && board[2][i] == mark) {
+				return 100;  // Winning column
+			}
+		}
+		if (board[0][0] == mark && board[1][1] == mark && board[2][2] == mark) {
+			return 100;  // Winning diagonal
+		}
+		if (board[0][2] == mark && board[1][1] == mark && board[2][0] == mark) {
+			return 100;  // Winning reverse diagonal
+		}
+	
+		for (int i = 0; i < 3; i++) {
+			for (int j = 0; j < 3; j++) {
+				if (board[i][j] == Mark.EMPTY) {
+					return 0;  // Game still ongoing
+				}
+			}
+		}
+		return -100;  // Loss (or draw, can be adjusted)
     }
+
+	public ArrayList<Move> generatePossibleMoves() {
+		ArrayList<Move> possibleMoves = new ArrayList<>();
+		for (int i = 0; i < 3; i++) {
+			for (int j = 0; j < 3; j++) {
+				if (board[i][j] == Mark.EMPTY) {
+					possibleMoves.add(new Move(i, j));
+				}
+			}
+		}
+		return possibleMoves;
+	}
+
 }

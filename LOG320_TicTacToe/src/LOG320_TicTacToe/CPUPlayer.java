@@ -22,6 +22,7 @@ class CPUPlayer
     // joueur MAX (X ou O)
     public CPUPlayer(Mark cpu){
     	this.cpuMark = cpu;
+        this.numExploredNodes=0;
     }
 
     // Ne pas changer cette méthode
@@ -35,113 +36,145 @@ class CPUPlayer
     // ont le même score.
     public ArrayList<Move> getNextMoveMinMax(Board board)
     {
-        ArrayList<Move> bestMoves = new ArrayList<>();
-        int bestValue = Integer.MIN_VALUE;
-
-        for (Move move : board.generatePossibleMoves()) {
-            board.play(move, cpuMark);
-            int boardValue = minMax(board, Mark.O);  // Assume O goes next
-            board.play(move, Mark.EMPTY);  // undo move
-
-            if (boardValue > bestValue) {
-                bestValue = boardValue;
-                bestMoves.clear();
-                bestMoves.add(move);
-            } else if (boardValue == bestValue) {
-                bestMoves.add(move);
-        }
-    }
-        return bestMoves;
+        
+        numExploredNodes = 0;
+        return minMax(board, cpuMark, 0);
 
     }
 
-     private int minMax(Board board, Mark currentPlayer) {
-        numExploredNodes++;
-    
-        int score = board.evaluate(cpuMark);
-    
-        if (score == 100) return score;
-        if (score == -100) return score;
-    
-        ArrayList<Move> possibleMoves = board.generatePossibleMoves();
-        if (possibleMoves.isEmpty()) return 0;
-    
-        if (currentPlayer == cpuMark) {
-            int maxEval = Integer.MIN_VALUE;
-            for (Move move : possibleMoves) {
-                board.play(move, currentPlayer);
-                maxEval = Math.max(maxEval, minMax(board, Mark.O));
-                board.play(move, Mark.EMPTY);  // undo move
-            }
-            return maxEval;
-        } else {
-            int minEval = Integer.MAX_VALUE;
-            for (Move move : possibleMoves) {
-                board.play(move, currentPlayer);
-                minEval = Math.min(minEval, minMax(board, cpuMark));
-                board.play(move, Mark.EMPTY);  // undo move
-            }
-            return minEval;
-        }
-    }
-    
 
     // Retourne la liste des coups possibles.  Cette liste contient
     // plusieurs coups possibles si et seuleument si plusieurs coups
     // ont le même score.
     public ArrayList<Move> getNextMoveAB(Board board){
-        ArrayList<Move> bestMoves = new ArrayList<>();
-        int bestValue = Integer.MIN_VALUE;
-
-        for (Move move : board.generatePossibleMoves()) {
-            board.play(move, cpuMark);
-            int boardValue = alphaBeta(board, Mark.O, Integer.MIN_VALUE, Integer.MAX_VALUE);  // Assume O goes next
-            board.play(move, Mark.EMPTY);  // undo move
-
-            if (boardValue > bestValue) {
-                bestValue = boardValue;
-                bestMoves.clear();
-                bestMoves.add(move);
-        } else if (boardValue == bestValue) {
-            bestMoves.add(move);
-        }
-    }
-    return bestMoves;
-       
+        numExploredNodes = 0;
+        return alphaBeta(board, cpuMark, Integer.MIN_VALUE, Integer.MAX_VALUE, 0);
 
     }
 
-   
-
-    private int alphaBeta(Board board, Mark currentPlayer, int alpha, int beta) {
+    private ArrayList<Move> minMax(Board board, Mark currentPlayer, int depth) {
         numExploredNodes++;
 
-        int boardVal = board.evaluate(cpuMark);
+        // Add basic validation to ensure board state and current player are valid
+        if (board == null || currentPlayer == null) {
+            throw new IllegalArgumentException("Board and currentPlayer cannot be null");
+        }
 
-        if (boardVal == 100) return boardVal;
-        if (boardVal == -100) return boardVal;
-
-        ArrayList<Move> possibleMoves = board.generatePossibleMoves();
-        if (possibleMoves.isEmpty()) return 0;
+        ArrayList<Move> bestMoves = new ArrayList<>();
+        int bestValue;
 
         if (currentPlayer == cpuMark) {
-            for (Move move : possibleMoves) {
-                board.play(move, currentPlayer);
-                alpha = Math.max(alpha, alphaBeta(board, Mark.O, alpha, beta));
-                board.play(move, Mark.EMPTY);  // undo move
-                if (beta <= alpha) break;  // beta cut-off
-            }
-            return alpha;
+            bestValue = Integer.MIN_VALUE;
         } else {
-            for (Move move : possibleMoves) {
-                board.play(move, currentPlayer);
-                beta = Math.min(beta, alphaBeta(board, cpuMark, alpha, beta));
-                board.play(move, Mark.EMPTY);  // undo move
-                if (beta <= alpha) break;  // alpha cut-off
-            }
-            return beta;
+            bestValue = Integer.MAX_VALUE;
         }
+
+        int boardValue = board.evaluate(cpuMark);
+
+        if (boardValue == 100 || boardValue == -100 || boardValue == 0) {
+            Move terminalMove = new Move();
+            terminalMove.setRow(boardValue);
+            bestMoves.add(terminalMove);
+            return bestMoves;
+        }
+
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                Move move = new Move(i, j);
+                if (board.isCellEmpty(move)) {
+                    board.play(move, currentPlayer);
+                    ArrayList<Move> currentMove = new ArrayList<>();
+                    currentMove.add(move);
+
+                    int currentValue;
+                    if (currentPlayer == cpuMark) {
+                        currentValue = minMax(board, Mark.O, depth + 1).get(0).getRow();
+                        if (currentValue > bestValue) {
+                            bestValue = currentValue;
+                            bestMoves = currentMove;
+                        }
+                    } else {
+                        currentValue = minMax(board, Mark.X, depth + 1).get(0).getRow();
+                        if (currentValue < bestValue) {
+                            bestValue = currentValue;
+                            bestMoves = currentMove;
+                        }
+                    }
+                    board.play(move, Mark.EMPTY);
+                }
+            }
+        }
+        bestMoves.get(0).setRow(bestValue);
+        return bestMoves;
     }
+
+    private ArrayList<Move> alphaBeta(Board board, Mark currentPlayer, int alpha, int beta, int depth) {
+        numExploredNodes++;
+
+        // Add basic validation to ensure board state and current player are valid
+        if (board == null || currentPlayer == null) {
+            throw new IllegalArgumentException("Board and currentPlayer cannot be null");
+        }
+
+        ArrayList<Move> bestMoves = new ArrayList<>();
+        int bestValue;
+
+        if (currentPlayer == cpuMark) {
+            bestValue = Integer.MIN_VALUE;
+        } else {
+            bestValue = Integer.MAX_VALUE;
+        }
+
+        int boardValue = board.evaluate(cpuMark);
+
+        if (boardValue == 100 || boardValue == -100 || boardValue == 0) {
+            Move terminalMove = new Move();
+            terminalMove.setRow(boardValue);
+            bestMoves.add(terminalMove);
+            return bestMoves;
+        }
+
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                Move move = new Move(i, j);
+                if (board.isCellEmpty(move)) {
+                    board.play(move, currentPlayer);
+                    ArrayList<Move> currentMove = new ArrayList<>();
+                    currentMove.add(move);
+
+                    int currentValue;
+                    if (currentPlayer == cpuMark) {
+                        currentValue = alphaBeta(board, Mark.O, alpha, beta, depth + 1).get(0).getRow();
+                        if (currentValue > bestValue) {
+                            bestValue = currentValue;
+                            bestMoves = currentMove;
+                        }
+                        if (bestValue > alpha) {
+                            alpha = bestValue;
+                        }
+                    } else {
+                        currentValue = alphaBeta(board, Mark.X, alpha, beta, depth + 1).get(0).getRow();
+                        if (currentValue < bestValue) {
+                            bestValue = currentValue;
+                            bestMoves = currentMove;
+                        }
+                        if (bestValue < beta) {
+                            beta = bestValue;
+                        }
+                    }
+                    board.play(move, Mark.EMPTY);
+
+                    if (alpha >= beta) {
+                        bestMoves.get(0).setRow(bestValue);
+                        return bestMoves;
+                    }
+                }
+            }
+        }
+        bestMoves.get(0).setRow(bestValue);
+        return bestMoves;
+
+   }
 
 
 

@@ -18,39 +18,21 @@ class Board
     			this.board[i][j]=Mark.EMPTY;
     		}
     	}
-    	//System.out.println("Plateau créé :");
-    	//printBoard();
+    	
     }
-    
-	public void printBoard(){
-		StringBuilder sb = new StringBuilder();
-		for (int i = 0; i < 3; i++) {
-			sb.append("|");
-			for (int j = 0; j < 3; j++) {
-				if (this.board[i][j] == Mark.EMPTY) {
-					sb.append("-");
-				}
-				if (board[i][j] == Mark.X) {
-					sb.append("X");
-				}
-				if (board[i][j] == Mark.O) {
-					sb.append("O");
-				}
-				sb.append("|");
-			}
-			sb.append("\n");
-		}
-		System.out.println(sb);
-	}
-
-
     // Place la pièce 'mark' sur le plateau, à la
     // position spécifiée dans Move
     //
     // Ne pas changer la signature de cette méthode
     public void play(Move m, Mark mark){
-    	this.board[m.getRow()][m.getCol()] = mark;
+    	if (m != null && isCellEmpty(m)) {
+            board[m.getRow()][m.getCol()] = mark;
+        } else {
+            // Handle invalid move (Optional)
+            System.out.println("Invalid move");
+        }
     }
+    
 
 
     // retourne  100 pour une victoire
@@ -59,40 +41,63 @@ class Board
     // Ne pas changer la signature de cette méthode
     public int evaluate(Mark mark){
 		for (int i = 0; i < 3; i++) {
-			if (board[i][0] == mark && board[i][1] == mark && board[i][2] == mark) {
-				return 100;  // Winning row
-			}
-			if (board[0][i] == mark && board[1][i] == mark && board[2][i] == mark) {
-				return 100;  // Winning column
-			}
-		}
-		if (board[0][0] == mark && board[1][1] == mark && board[2][2] == mark) {
-			return 100;  // Winning diagonal
-		}
-		if (board[0][2] == mark && board[1][1] == mark && board[2][0] == mark) {
-			return 100;  // Winning reverse diagonal
-		}
-	
-		for (int i = 0; i < 3; i++) {
-			for (int j = 0; j < 3; j++) {
-				if (board[i][j] == Mark.EMPTY) {
-					return 0;  // Game still ongoing
-				}
-			}
-		}
-		return -100;  // Loss (or draw, can be adjusted)
+			// Check rows and columns
+            if ((board[i][0] == mark && board[i][1] == mark && board[i][2] == mark) ||
+                (board[0][i] == mark && board[1][i] == mark && board[2][i] == mark)) {
+                return 100;  // Winning
+            }
+        }
+
+        // Check diagonals
+        if ((board[0][0] == mark && board[1][1] == mark && board[2][2] == mark) ||
+            (board[0][2] == mark && board[1][1] == mark && board[2][0] == mark)) {
+            return 100;  // Winning
+        }
+
+        // Check if the opponent has won
+        Mark opponent = (mark == Mark.X) ? Mark.O : Mark.X;
+        for (int i = 0; i < 3; i++) {
+            // Check rows and columns
+            if ((board[i][0] == opponent && board[i][1] == opponent && board[i][2] == opponent) ||
+                (board[0][i] == opponent && board[1][i] == opponent && board[2][i] == opponent)) {
+                return -100;  // Losing
+            }
+        }
+
+        // Check diagonals for opponent
+        if ((board[0][0] == opponent && board[1][1] == opponent && board[2][2] == opponent) ||
+            (board[0][2] == opponent && board[1][1] == opponent && board[2][0] == opponent)) {
+            return -100;  // Losing
+        }
+
+        // Check if it's a draw
+        boolean isDraw = true;
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                if (board[i][j] == Mark.EMPTY) {
+                    isDraw = false;
+                    break;
+                }
+            }
+            if (!isDraw) break;
+        }
+
+        if (isDraw) {
+            return 0; // Draw
+        }
+
+        // Otherwise, the game is ongoing.
+        return Integer.MIN_VALUE;  // Not terminal state
     }
 
-	public ArrayList<Move> generatePossibleMoves() {
-		ArrayList<Move> possibleMoves = new ArrayList<>();
-		for (int i = 0; i < 3; i++) {
-			for (int j = 0; j < 3; j++) {
-				if (board[i][j] == Mark.EMPTY) {
-					possibleMoves.add(new Move(i, j));
-				}
-			}
-		}
-		return possibleMoves;
+    // Additional utility method to check if a cell is empty
+    public boolean isCellEmpty(Move m) {
+        return board[m.getRow()][m.getCol()] == Mark.EMPTY;
+    }
+
+	public Mark[][] getBoard() {
+		return board;
 	}
+	
 
 }
